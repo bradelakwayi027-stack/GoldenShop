@@ -138,7 +138,7 @@ else:
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS Settings
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000') # Vercel URL
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000').rstrip('/') # Vercel URL
 CORS_ALLOWED_ORIGINS = [
     FRONTEND_URL,
     'http://localhost:3000',

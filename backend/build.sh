@@ -11,4 +11,7 @@ python manage.py collectstatic --no-input
 echo "Running migrations..."
 python manage.py migrate
 
+echo "Seeding admin user..."
+python manage.py seed_admin
+
 echo "Build complete."
