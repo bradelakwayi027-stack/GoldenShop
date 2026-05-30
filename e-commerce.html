@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="e-commerce.html">
+    <title>E-commerce</title>
+</head>
+<body id ="top">
+    <header>
+        <nav>
+            <a href="#top">Accueil </a>
+            <a href="#produits">Produits </a>
+            <a href="#apropos"> A propos </a>
+            <a href="#Contact"> Contact</a>
+            <a href="login.html">Connexion / Inscription</a>
+            <a href="page_administrator.html">Admin</a>
+        </nav>
+    </header>
+
+    <main>
+        <section id="accueil">
+            <h2>Bienvenue sur notre boutique de vêtements</h2>
+            <p>Découvrez les dernières tendances pour hommes, femmes et enfants.</p>
+            <a href="#produits"class="btn">Voir les produits</a>
+        </section>
+        
+        <section id="produits">
+            <h2>Nos produits</h2>
+                        <div id="productsList">
+                            <!-- Les produits seront affichés ici dynamiquement -->
+                        </div>
+                        <template id="productTpl">
+                            <article class="product">
+                                <img src="" alt="image produit">
+                                <h3 class="p-title"></h3>
+                                <p class="p-price"></p>
+                                <button class="add-to-cart">Ajouter au panier</button>
+                            </article>
+                        </template>
+        </section>
+
+        <section id="apropos">
+            <h2> A propos de nous <h2>
+                <p>nous proposons des vêtements modernes, de qualité et à prix abordables</p>
+        </section>
+
+        <section id="Contact">
+            <h2>Contact</h2>
+            <form>
+                <label for="name">Nom</label>
+                <input type="text" id="nom" name="nom">
+                
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email">
+
+                <label for="message">Message</label>
+                <textarea name="message" id="message"></textarea>
+                
+                <button type="submit">Envoyer</button>
+            </form>
+        </section>
+    </main>
+    <footer>
+        <p>&copy;2026 boutique mode-tous droits réservés</p>
+    </footer>
+        <script src="frontend.js"></script>
+        <script>
+            // Exemple minimal: charger les boutiques approuvées comme "vitrines de produits"
+            (async () => {
+                try {
+                    const shops = await window.ECOM.getShops();
+                    const list = document.getElementById('productsList');
+                    const tpl = document.getElementById('productTpl');
+                    if (!Array.isArray(shops)) return;
+                    shops.forEach(s => {
+                        const node = tpl.content.cloneNode(true);
+                        node.querySelector('.p-title').textContent = s.name + ' — Boutique';
+                        node.querySelector('.p-price').textContent = '';
+                        list.appendChild(node);
+                    });
+                } catch (err) { console.error(err); }
+            })();
+        </script>
+</body>
+</html>

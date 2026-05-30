@@ -1,0 +1,94 @@
+.shop-page {
+  min-height: 80vh;
+}
+
+.hero {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+}
+
+.shops-section {
+  padding: 2rem 0;
+}
+
+.shops-section h2 {
+  margin-bottom: 2rem;
+  font-size: 2rem;
+  color: var(--text-dark);
+}
+
+.shops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.shop-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  text-align: center;
+}
+
+.shop-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.shop-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.shop-card h3 {
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+}
+
+.shop-owner {
+  color: var(--text-gray);
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.btn-primary-outline {
+  background-color: transparent;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  padding: 0.5rem 1.5rem;
+}
+
+.btn-primary-outline:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+  
+  .shops-grid {
+    grid-template-columns: 1fr;
+  }
+}

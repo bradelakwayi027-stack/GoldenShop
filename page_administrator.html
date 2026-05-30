@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gestion des boutiques - Administrateur</title>
+    <link rel="stylesheet" href="style_administrateur.css">
+    <link rel="stylesheet" href="e-commerce.html">
+</head>
+<body>
+    <header>
+        <button class="toggle-btn" aria-label="Basculer la barre de navigation">☰
+            
+        </button>
+        <h1>Gestion des boutiques</h1>
+        <a href="#" class="btn_deconnexion" role="button" aria-label="se déconnecter">Deconnexion</a>
+    </header>
+    <div class="sidebar-overlay"></div>
+
+    <nav class="sidebar" aria-label="Navigation principale">
+        <ul>
+            <li><a href="#statistiques_boutiques">Statistiques des boutiques</a></li>
+            <li><a href="#statistiques_financieres">Statistiques financières</a></li>
+            <li><a href="#liste_boutiques">Liste des boutiques</a></li>
+            <li><a href="#demandes_boutiques">Demandes de boutiques</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="statistiques_boutiques" aria-labelledby="h2_stat_boutiques">
+        <h2 id="h2_stat_boutiques">Statistique des boutiques</h2>
+        <div>
+            <p>Nombre de boutiques : <span id="total_boutiques" aria-live="polite">0</span></p>
+            <p>Boutiques actives : <span id="boutiques_actives" aria-live="polite">0</span></p>
+            <p>Boutiques en attente : <span id="boutiques_attente" aria-live="polite">0</span></p>
+            <p>Ventes totales : <span id="ventes_totales" aria-live="polite">0</span></p>
+        </div>
+    </section>
+
+    <section id="statistiques_financieres" aria-labelledby="h2-stat-financieres">
+        <h2 id="h2-stat-financieres">Statistiques financières</h2>
+        <div>
+            <p>Chiffre d'affaires total: <span id="chiffre_affaires_total" aria-live="polite">0</span></p>
+            <p>Revenus par catégorie : <span id="revenus_par_categorie" aria-live="polite">0</span></p>
+                        <p>Commissions collectées : <span id="commissions_collectées" aria-live="polite">0</span></p>
+                        <p>Commissions (détail): <span id="commissions_details" aria-live="polite"></span></p>
+            <p>Graphiques/tableaux de données financières : <span id="graphiques_financiers" aria-live="polite">0</span></p>
+        </div>
+    </section>
+        <section id="liste_utilisateurs" aria-labelledby="h2-liste-utilisateurs">
+                <h2 id="h2-liste-utilisateurs">Liste des utilisateurs</h2>
+                <table id="table_utilisateurs">
+                    <thead>
+                        <tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Inscription</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+        </section>
+    <section id="liste_boutiques" aria-labelledby="h2-liste-boutiques">
+        <h2 id="h2-liste-boutiques">Liste des boutiques </h2>
+        <table id="table_boutiques">
+            <thead>
+            <tr>
+                <th scope="col">Nom</th>
+                <th scope="col">Propriétaire</th>
+                <th scope="col">Catégorie</th>
+                <th scope="col">Statut</th>
+                <th scope="col">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Boutiques Fashion</td>
+                <td>Merveilles N.</td>
+                <td>Mode</td>
+                <td>Active</td>
+
+                <td>
+                    <button class="btn_voir" aria-label="voir Boutiques Fashion">voir</button>
+                    <button class="btn_modifier" aria-label="modifier Boutiques Fashion">Modifier</button>
+                    <button class="btn_suspendre" aria-label="suspendre Boutiques Fashion">Suspendre</button>
+                    <button class="btn_supprimer" aria-label="supprimer Boutiques Fashion">supprimer</button>
+                </td>
+            </tr>
+
+            <tr>
+                <td>Audrey Store</td>
+                <td>Audrey des Maj.</td>
+                <td>Beauté</td>
+                <td>En attente</td>
+                <td>
+                    <button class="btn_voir" aria-label="voir Audrey Store">voir</button>
+                    <button class="btn_valider" aria-label="valider Audrey Store">Valider</button>
+                    <button class="btn_refuser" aria-label="refuser Audrey Store">Refuser</button>
+                </td>
+            </tr>
+        </table>
+    </section>
+
+    <section id="demandes_boutiques">
+        <h2>Demandes de boutiques</h2>
+        <table id="table_demandes">
+            <thead>
+            <tr>
+                <th scope="col">Boutique demandée</th>
+                <th scope="col">Demandeur</th>
+                <th scope="col">Email</th>
+                <th scope="col">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Beauty</td>
+                <td>John Doe</td>
+                <td>john.doe@example.com</td>
+                <td>
+                    <button class="btn_valider" aria-label="valider la demande de Beauty">Valider</button>
+                    <button class="btn_refuser" aria-label="refuser la demande de Beauty">Refuser</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+    </main>
+
+    <script>
+        const toggleBtn = document.querySelector('.toggle-btn');
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        const body = document.body;
+
+        toggleBtn?.addEventListener('click', () => {
+            sidebar?.classList.toggle('active');
+            overlay?.classList.toggle('active');
+            body.classList.toggle('sidebar-open');
+        });
+
+        overlay?.addEventListener('click', () => {
+            sidebar?.classList.remove('active');
+            overlay?.classList.remove('active');
+            body.classList.remove('sidebar-open');
+        });
+
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            link.addEventListener('click', () => {
+                sidebar?.classList.remove('active');
+                overlay?.classList.remove('active');
+                body.classList.remove('sidebar-open');
+            });
+        });
+    </script>
+
+        <script src="frontend.js"></script>
+        <script>
+                // Charger les demandes de boutiques en attente pour l'admin
+                (async () => {
+                    try {
+                        await window.ECOM.loadPendingShopsToTable('#table_demandes');
+                        // charger utilisateurs
+                        const users = await window.ECOM.getUsers();
+                        const tbody = document.querySelector('#table_utilisateurs tbody');
+                        if (Array.isArray(users)) {
+                            tbody.innerHTML = '';
+                            users.forEach(u => {
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `<td>${u.name}</td><td>${u.email}</td><td>${u.role}</td><td>${new Date(u.createdAt||u._id?.getTimestamp?.()||'').toLocaleString()}</td>`;
+                                tbody.appendChild(tr);
+                            });
+                        }
+
+                        // charger commandes + commissions
+                        const data = await window.ECOM.getAllOrders();
+                        if (data) {
+                            document.getElementById('commissions_collectées').textContent = data.totalCommission || 0;
+                        }
+                    } catch (err) {
+                        console.error('Erreur chargement demandes', err);
+                    }
+                })();
+        </script>
+
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Tableau de bord vendeur</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .card{border:1px solid #ddd;padding:12px;margin:8px}
+    .grid{display:flex;gap:12px;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Tableau de bord vendeur</h1>
+    <a href="e-commerce.html">Retour site</a>
+  </header>
+
+  <main>
+    <section>
+      <h2>Créer un produit</h2>
+      <form id="productForm">
+        <label>Nom<br><input id="p_name" required /></label><br>
+        <label>Description<br><textarea id="p_description"></textarea></label><br>
+        <label>Prix<br><input id="p_price" type="number" step="0.01" required /></label><br>
+        <label>Stock<br><input id="p_stock" type="number" value="0" /></label><br>
+        <label>Boutique (ID)<br><input id="p_shopId" required placeholder="ID de la boutique" /></label><br>
+        <button type="button" id="createProductBtn">Créer produit</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Mes produits</h2>
+      <div id="myProducts" class="grid"></div>
+    </section>
+
+    <section>
+      <h2>Commandes reçues</h2>
+      <div id="myOrders"></div>
+    </section>
+  </main>
+
+  <script src="frontend.js"></script>
+  <script>
+    document.getElementById('createProductBtn').addEventListener('click', async () => {
+      const payload = {
+        name: document.getElementById('p_name').value,
+        description: document.getElementById('p_description').value,
+        price: Number(document.getElementById('p_price').value),
+        stock: Number(document.getElementById('p_stock').value),
+        shopId: document.getElementById('p_shopId').value,
+      };
+      const res = await window.ECOM.createProduct(payload);
+      if (res._id) {
+        alert('Produit créé');
+        loadMyProducts();
+      } else alert(res.message || JSON.stringify(res));
+    });
+
+    async function loadMyProducts(){
+      const prods = await window.ECOM.getMyProducts();
+      const box = document.getElementById('myProducts');
+      box.innerHTML = '';
+      prods.forEach(p => {
+        const el = document.createElement('div'); el.className='card';
+        el.innerHTML = `<h3>${p.name}</h3><p>${p.description || ''}</p><p>Prix: ${p.price}</p><p>Stock: ${p.stock}</p>`;
+        box.appendChild(el);
+      });
+    }
+
+    async function loadMyOrders(){
+      const orders = await window.ECOM.getVendorOrders();
+      const box = document.getElementById('myOrders');
+      box.innerHTML = '';
+      orders.forEach(o => {
+        const el = document.createElement('div'); el.className='card';
+        el.innerHTML = `<strong>Commande #${o._id}</strong><p>Boutique: ${o.shop?.name || ''}</p><p>Client: ${o.user?.name || ''} (${o.user?.email || ''})</p><p>Total: ${o.total} — Commission: ${o.commission}</p>`;
+        box.appendChild(el);
+      });
+    }
+
+    (async ()=>{ await loadMyProducts(); await loadMyOrders(); })();
+  </script>
+</body>
+</html>
