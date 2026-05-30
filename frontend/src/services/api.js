@@ -32,16 +32,16 @@ export const getImageUrl = (imagePath) => {
 // Ajouter le token JWT à chaque requête et gérer FormData
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (token && token !== 'django_session_cookie_auth') {
+    config.headers.Authorization = `Token ${token}`;
   }
-  
+
   // Ne pas forcer Content-Type pour FormData
   // Laisser axios/navigateur gérer multipart/form-data automatiquement
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type'];
   }
-  
+
   return config;
 });
 

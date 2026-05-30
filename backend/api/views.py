@@ -10,6 +10,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, authentication_classes, action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
 
 from .models import User, Shop, Product, Order, OrderItem, Message
 from .serializers import (
@@ -22,8 +23,6 @@ from .serializers import (
 @api_view(['POST'])
 @authentication_classes([])  # No auth check = no DRF CSRF enforcement on register
 @permission_classes([AllowAny])
-@ensure_csrf_cookie
-@csrf_exempt
 def register_view(request):
     data = request.data
     name = data.get('name')
@@ -54,13 +53,11 @@ def register_view(request):
         role=role
     )
 
-    # Log the user in natively via session cookie
-    login(request, user)
-
+    token, _ = Token.objects.get_or_create(user=user)
     serializer = UserSerializer(user)
     return Response({
         'user': serializer.data,
-        'token': 'django_session_cookie_auth'
+        'token': token.key
     }, status=status.HTTP_201_CREATED)
 
 
@@ -84,10 +81,11 @@ def login_view(request):
     user = authenticate(request, username=user_obj.username, password=password)
     if user is not None:
         login(request, user)
+        token, _ = Token.objects.get_or_create(user=user)
         serializer = UserSerializer(user)
         return Response({
             'user': serializer.data,
-            'token': 'django_session_cookie_auth'
+            'token': token.key
         }, status=status.HTTP_200_OK)
     else:
         return Response({'message': 'Identifiants invalides', 'error': 'Identifiants invalides'}, status=status.HTTP_401_UNAUTHORIZED)

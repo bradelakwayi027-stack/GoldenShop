@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     
     # Third party apps
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'cloudinary_storage',
     'cloudinary',
@@ -169,6 +170,7 @@ CSRF_COOKIE_SECURE = not DEBUG
 # Django REST Framework Settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
