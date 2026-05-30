@@ -124,17 +124,15 @@ STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Media files (Images)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Cloudinary Configuration
 CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
 if CLOUDINARY_URL:
-    cloudinary.config(
-        secure=True
-    )
+    cloudinary.config(secure=True)
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-else:
-    # Fallback for local development if Cloudinary is not set
-    MEDIA_URL = '/uploads/'
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

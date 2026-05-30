@@ -183,19 +183,7 @@ def product_list_create(request):
         if not request.user.is_authenticated:
             return Response({'message': 'Non authentifié'}, status=status.HTTP_401_UNAUTHORIZED)
             
-        data = request.data.copy()
-        
-        # Handle file upload or image path string
-        image_file = request.FILES.get('image')
-        image_path = ''
-        if image_file:
-            # Save file to uploads folder
-            filename = f"{os.urandom(8).hex()}_{image_file.name}"
-            path = default_storage.save(filename, ContentFile(image_file.read()))
-            image_path = f"/uploads/{path}"
-            data['image'] = image_path
-            
-        serializer = ProductSerializer(data=data)
+        serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
             # Check shop ownership
             shop = serializer.validated_data['shop']
@@ -236,16 +224,7 @@ def product_detail_view(request, pk):
         return Response({'message': 'Non autorisé'}, status=status.HTTP_403_FORBIDDEN)
 
     if request.method == 'PUT':
-        data = request.data.copy()
-        
-        # Handle file upload update
-        image_file = request.FILES.get('image')
-        if image_file:
-            filename = f"{os.urandom(8).hex()}_{image_file.name}"
-            path = default_storage.save(filename, ContentFile(image_file.read()))
-            data['image'] = f"/uploads/{path}"
-            
-        serializer = ProductSerializer(product, data=data, partial=True)
+        serializer = ProductSerializer(product, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

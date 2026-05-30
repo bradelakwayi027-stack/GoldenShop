@@ -23,10 +23,14 @@ const api = axios.create({
 const IMAGE_BASE = isProd ? (import.meta.env.VITE_API_URL || '') : 'http://127.0.0.1:5000';
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
-  // Si le chemin est déjà absolu, l'utiliser tel quel
+  // Si le chemin est déjà une URL absolue (Cloudinary), l'utiliser tel quel
   if (imagePath.startsWith('http')) return imagePath;
-  // Sinon, préfixer avec l'URL du backend pour les images
-  return `${IMAGE_BASE}${imagePath}`;
+
+  // S'assurer que le chemin commence par / pour plus de cohérence
+  const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+
+  // Préfixer avec l'URL du backend pour les images locales
+  return `${IMAGE_BASE}${cleanPath}`;
 };
 
 // Ajouter le token JWT à chaque requête et gérer FormData
