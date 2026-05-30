@@ -28,6 +28,7 @@ class ProductSerializer(serializers.ModelSerializer):
     shop_id = serializers.PrimaryKeyRelatedField(
         queryset=Shop.objects.all(), source='shop', write_only=True
     )
+    image = serializers.ImageField(required=False, allow_null=True)
     created_by = UserSerializer(read_only=True)
 
     class Meta:
