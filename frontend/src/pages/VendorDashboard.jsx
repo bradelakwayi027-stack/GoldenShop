@@ -14,6 +14,7 @@ export default function VendorDashboard() {
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [shopCreating, setShopCreating] = useState(false);
+  const [productSaving, setProductSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [activeTab, setActiveTab] = useState('products');
   const [toast, setToast] = useState(null);
@@ -94,18 +95,36 @@ export default function VendorDashboard() {
     data.append('category', formData.category);
     data.append('shop_id', selectedShop);
     if (imageFile) data.append('image', imageFile);
+
+    setProductSaving(true);
     try {
       if (editingId) {
         await productService.update(editingId, data);
+        showToast('Produit mis à jour avec succès !');
         setEditingId(null);
       } else {
         await productService.create(data);
+        showToast('Produit mis en vente !');
       }
       setFormData({ name: '', description: '', price: '', stock: '', category: '' });
       setImageFile(null);
-      loadData();
+      await loadData();
     } catch (err) {
-      alert('Erreur: ' + (err.response?.data?.message || err.message));
+      let errMsg = 'Erreur lors de l\'enregistrement du produit.';
+      if (err.response?.data) {
+        if (typeof err.response.data === 'object') {
+          errMsg = Object.entries(err.response.data)
+            .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+            .join(' | ');
+        } else {
+          errMsg = err.response.data.message || errMsg;
+        }
+      } else if (err.message) {
+        errMsg = err.message;
+      }
+      showToast(errMsg, 'error');
+    } finally {
+      setProductSaving(false);
     }
   };
 
@@ -233,8 +252,22 @@ export default function VendorDashboard() {
                     </label>
                     <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} />
                   </div>
-                  <button type="submit" className="btn-primary-solid">{editingId ? 'Enregistrer les modifications' : 'Mettre en vente'}</button>
-                  {editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({ name: '', description: '', price: '', stock: '', category: '' }); }} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'white' }}>Annuler</button>}
+                  <button type="submit" className="btn-primary-solid" disabled={productSaving} style={{ opacity: productSaving ? 0.7 : 1 }}>
+                    {productSaving ? '⏳ Enregistrement...' : (editingId ? 'Enregistrer les modifications' : 'Mettre en vente')}
+                  </button>
+                  {editingId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(null);
+                        setFormData({ name: '', description: '', price: '', stock: '', category: '' });
+                        setImageFile(null);
+                      }}
+                      style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', marginTop: '8px' }}
+                    >
+                      Annuler la modification
+                    </button>
+                  )}
                 </form>
               ) : (
                 <div style={{ textAlign: 'center', padding: '20px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>

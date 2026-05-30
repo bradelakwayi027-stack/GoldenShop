@@ -1,5 +1,6 @@
-from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+from cloudinary.models import CloudinaryField
 
 class User(AbstractUser):
     ROLE_CHOICES = (
@@ -43,7 +44,7 @@ class Product(models.Model):
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='products')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products')
     stock = models.IntegerField(default=0)
-    image = models.CharField(max_length=500, blank=True, null=True) # string path like '/uploads/file.png'
+    image = CloudinaryField('image', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
