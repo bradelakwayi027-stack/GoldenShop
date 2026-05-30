@@ -1,9 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary: #D4AF37; /* Metallic Gold */
+  --primary: #D4AF37;
+  /* Metallic Gold */
   --primary-hover: #B8860B;
-  --bg-dark: #0F172A; /* Dark Slate */
+  --bg-dark: #0F172A;
+  /* Dark Slate */
   --bg-card: #1E293B;
   --text-main: #F8FAFC;
   --text-muted: #94A3B8;
@@ -20,12 +22,24 @@
   font-family: 'Outfit', sans-serif;
 }
 
+html {
+  font-size: 16px;
+}
+
 body {
   background-color: var(--bg-dark);
   color: var(--text-main);
   min-height: 100vh;
   overflow-x: hidden;
   line-height: 1.6;
+}
+
+/* --- Responsive Container --- */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
 }
 
 a {
@@ -41,16 +55,21 @@ button {
   border-radius: 8px;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   background: var(--bg-card);
   border: 1px solid var(--glass-border);
   color: white;
   padding: 12px;
   border-radius: 8px;
   font-size: 1rem;
+  width: 100%;
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
@@ -61,17 +80,22 @@ input:focus, textarea:focus, select:focus {
   border: 1px solid var(--glass-border);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
 }
 
 .btn-primary-solid {
+  display: inline-block;
   background: var(--accent-gradient);
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
   box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
 .btn-primary-solid:hover {
@@ -85,3 +109,143 @@ input:focus, textarea:focus, select:focus {
   border: 1px solid var(--glass-border);
 }
 
+/* ========================================
+   DASHBOARD RESPONSIVE
+   ======================================== */
+
+.dashboard {
+  padding: 24px 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Tabs scrollable on mobile */
+.tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-btn {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* ========================================
+   TOAST NOTIFICATIONS (replace alert())
+   ======================================== */
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  color: white;
+  padding: 14px 24px;
+  border-radius: 12px;
+  z-index: 9999;
+  font-size: 0.95rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease;
+  max-width: 90vw;
+  text-align: center;
+}
+
+.toast.success {
+  border-color: #10b981;
+}
+
+.toast.error {
+  border-color: var(--danger);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ========================================
+   MOBILE BREAKPOINTS
+   ======================================== */
+
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+
+  .premium-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .dashboard {
+    padding: 16px 12px;
+  }
+
+  /* Dashboard grids go single column */
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tables scroll horizontally */
+  table {
+    min-width: 500px;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Hero section */
+  .hero h1 {
+    font-size: 2rem !important;
+  }
+
+  .hero p {
+    font-size: 1rem !important;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Features grid */
+  .features-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Buttons full width on small screens */
+  .btn-full-mobile {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 14px;
+  }
+
+  .premium-card {
+    padding: 12px;
+  }
+}

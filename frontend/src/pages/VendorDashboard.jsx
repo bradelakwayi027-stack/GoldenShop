@@ -13,8 +13,15 @@ export default function VendorDashboard() {
   const [formData, setFormData] = useState({ name: '', description: '', price: '', stock: '', category: '' });
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [shopCreating, setShopCreating] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [activeTab, setActiveTab] = useState('products');
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   useEffect(() => { loadData(); }, []);
 
@@ -43,12 +50,32 @@ export default function VendorDashboard() {
 
   const handleCreateShop = async (e) => {
     e.preventDefault();
+    if (!shopForm.name.trim()) {
+      showToast('Le nom de la boutique est requis.', 'error');
+      return;
+    }
+    setShopCreating(true);
     try {
       await shopService.create(shopForm);
       setShopForm({ name: '', description: '', owner_name: '' });
-      loadData();
+      showToast('Boutique créée ! En attente d\'approbation de l\'admin.');
+      await loadData();
     } catch (err) {
-      alert('Erreur: ' + (err.response?.data?.message || err.message));
+      let errMsg = 'Erreur lors de la création de la boutique.';
+      if (err.response?.data) {
+        if (typeof err.response.data === 'object') {
+          errMsg = Object.entries(err.response.data)
+            .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+            .join(' | ');
+        } else {
+          errMsg = err.response.data.message || errMsg;
+        }
+      } else if (err.message) {
+        errMsg = err.message;
+      }
+      showToast(errMsg, 'error');
+    } finally {
+      setShopCreating(false);
     }
   };
 
@@ -105,30 +132,43 @@ export default function VendorDashboard() {
   if (loading) return <div className="container" style={{ padding: '50px', textAlign: 'center' }}><p>Chargement du dashboard...</p></div>;
 
   return (
-    <div className="dashboard" style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1 style={{ color: 'var(--primary)', marginBottom: '32px' }}>Tableau de Bord Vendeur</h1>
+    <div className="dashboard">
+      {/* Toast notification */}
+      {toast && (
+        <div className={`toast ${toast.type}`}>{toast.msg}</div>
+      )}
 
-      {/* Onglets */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '16px' }}>
-        <button onClick={() => setActiveTab('products')} style={{ padding: '12px 24px', background: activeTab === 'products' ? 'var(--primary)' : 'transparent', color: activeTab === 'products' ? 'black' : 'white', border: activeTab === 'products' ? 'none' : '1px solid var(--glass-border)', borderRadius: '8px', fontWeight: activeTab === 'products' ? 'bold' : 'normal', cursor: 'pointer', fontSize: '1rem' }}>
-          📦 Mes Articles
-        </button>
-        <button onClick={() => setActiveTab('orders')} style={{ padding: '12px 24px', background: activeTab === 'orders' ? 'var(--primary)' : 'transparent', color: activeTab === 'orders' ? 'black' : 'white', border: activeTab === 'orders' ? 'none' : '1px solid var(--glass-border)', borderRadius: '8px', fontWeight: activeTab === 'orders' ? 'bold' : 'normal', cursor: 'pointer', fontSize: '1rem', position: 'relative' }}>
-          📋 Commandes
-          {orders.filter(o => !o.is_read_by_vendor).length > 0 && (
-            <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '50%', fontWeight: 'bold', border: '2px solid #1a1a1a' }}>
-              {orders.filter(o => !o.is_read_by_vendor).length}
-            </span>
-          )}
-        </button>
-        <button onClick={() => setActiveTab('messages')} style={{ padding: '12px 24px', background: activeTab === 'messages' ? 'var(--primary)' : 'transparent', color: activeTab === 'messages' ? 'black' : 'white', border: activeTab === 'messages' ? 'none' : '1px solid var(--glass-border)', borderRadius: '8px', fontWeight: activeTab === 'messages' ? 'bold' : 'normal', cursor: 'pointer', fontSize: '1rem', position: 'relative' }}>
-          ✉️ Messages Admin
-          {messages.filter(m => !m.is_read).length > 0 && (
-            <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '50%' }}>
-              {messages.filter(m => !m.is_read).length}
-            </span>
-          )}
-        </button>
+      <h1 style={{ color: 'var(--primary)', marginBottom: '24px', fontSize: 'clamp(1.4rem, 5vw, 2rem)' }}>Tableau de Bord Vendeur</h1>
+
+      {/* Onglets - scrollable on mobile */}
+      <div className="tabs" style={{ marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
+        {[
+          { id: 'products', label: '📦 Articles' },
+          { id: 'orders', label: '📋 Commandes', badge: orders.filter(o => !o.is_read_by_vendor).length },
+          { id: 'messages', label: '✉️ Messages', badge: messages.filter(m => !m.is_read).length },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className="tab-btn"
+            style={{
+              background: activeTab === tab.id ? 'var(--primary)' : 'transparent',
+              color: activeTab === tab.id ? 'black' : 'white',
+              border: activeTab === tab.id ? 'none' : '1px solid var(--glass-border)',
+              borderRadius: '8px',
+              fontWeight: activeTab === tab.id ? 'bold' : 'normal',
+              cursor: 'pointer',
+              position: 'relative',
+            }}
+          >
+            {tab.label}
+            {tab.badge > 0 && (
+              <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: 'white', fontSize: '0.65rem', padding: '2px 5px', borderRadius: '50%', fontWeight: 'bold', border: '2px solid #1a1a1a' }}>
+                {tab.badge}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Onglet: Boutique et Articles */}
@@ -152,11 +192,13 @@ export default function VendorDashboard() {
                 </div>
               ) : (
                 <form onSubmit={handleCreateShop} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <p style={{ color: 'var(--text-muted)', marginBottom: '10px' }}>Créez votre boutique pour commencer.</p>
-                  <input placeholder="Nom de la boutique" value={shopForm.name} onChange={e => setShopForm({...shopForm, name: e.target.value})} required />
-                  <input placeholder="Nom du propriétaire" value={shopForm.owner_name} onChange={e => setShopForm({...shopForm, owner_name: e.target.value})} required />
-                  <textarea placeholder="Description de la boutique" value={shopForm.description} onChange={e => setShopForm({...shopForm, description: e.target.value})} required />
-                  <button type="submit" className="btn-primary-solid">Créer ma Boutique</button>
+                  <p style={{ color: 'var(--text-muted)', marginBottom: '10px' }}>Créez votre boutique pour commencer à vendre.</p>
+                  <input placeholder="Nom de la boutique" value={shopForm.name} onChange={e => setShopForm({ ...shopForm, name: e.target.value })} required />
+                  <input placeholder="Nom du propriétaire" value={shopForm.owner_name} onChange={e => setShopForm({ ...shopForm, owner_name: e.target.value })} />
+                  <textarea placeholder="Description de la boutique" value={shopForm.description} onChange={e => setShopForm({ ...shopForm, description: e.target.value })} style={{ minHeight: '90px' }} />
+                  <button type="submit" className="btn-primary-solid" disabled={shopCreating} style={{ opacity: shopCreating ? 0.7 : 1 }}>
+                    {shopCreating ? '⏳ Création...' : '🏪 Créer ma Boutique'}
+                  </button>
                 </form>
               )}
             </section>
@@ -211,7 +253,7 @@ export default function VendorDashboard() {
                 <div key={p.id} style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ height: '120px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '12px', overflow: 'hidden' }}>
                     {p.image
-                      ? <img src={getImageUrl(p.image)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display='none'; }} />
+                      ? <img src={getImageUrl(p.image)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
                       : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>📦</div>
                     }
                   </div>
@@ -269,7 +311,7 @@ export default function VendorDashboard() {
                     <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                       <div style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.05)' }}>
                         {item.product_image
-                          ? <img src={getImageUrl(item.product_image)} alt={item.product_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display='none'; }} />
+                          ? <img src={getImageUrl(item.product_image)} alt={item.product_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
                           : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>📦</div>
                         }
                       </div>

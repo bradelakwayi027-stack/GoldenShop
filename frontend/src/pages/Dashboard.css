@@ -238,16 +238,49 @@ table tr:hover {
     font-size: 1.5rem;
   }
 
-  .tabs {
-    flex-direction: column;
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .admin-dashboard .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 8px;
+    gap: 8px;
+  }
+
+  .tab {
+    white-space: nowrap;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   table {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 
   table th,
   table td {
-    padding: 0.5rem;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .products-grid {
+    grid-template-columns: 1fr;
   }
 }
