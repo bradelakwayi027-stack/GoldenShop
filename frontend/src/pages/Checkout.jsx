@@ -37,10 +37,10 @@ export default function Checkout() {
         container.innerHTML = '';
         window.paypal.Buttons({
           createOrder: async (data, actions) => {
-            const shops = [...new Set(cart.map(item => item.shop?._id || item.shop))];
+            const shops = [...new Set(cart.map(item => item.shop?.id || item.shop?._id || item.shop))];
             try {
-              const shopId = shops[0];
-              const shopItems = cart.filter(item => (item.shop?._id || item.shop) === shopId);
+              const shopId = shops[0]?.id || shops[0];
+              const shopItems = cart.filter(item => (item.shop?.id || item.shop?._id || item.shop) === shopId);
               const shopTotal = shopItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
               const res = await paymentService.createPaypalOrder({
@@ -64,21 +64,22 @@ export default function Checkout() {
               });
               
               if (res.data.status === 'COMPLETED' || res.data.simulated) {
-                const shops = [...new Set(cart.map(item => item.shop?._id || item.shop))];
+                const shops = [...new Set(cart.map(item => item.shop?.id || item.shop?._id || item.shop))];
                 for (const shopId of shops) {
-                  const shopItems = cart.filter(item => (item.shop?._id || item.shop) === shopId);
+                  const resolvedShopId = shopId?.id || shopId;
+                  const shopItems = cart.filter(item => (item.shop?.id || item.shop?._id || item.shop) === resolvedShopId);
                   const shopTotal = shopItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
                   
                   await orderService.create({
                     items: shopItems.map(i => ({ 
-                      product: i._id,
+                      product: i.id || i._id,
                       productName: i.name, 
                       productImage: i.image,
                       quantity: i.quantity, 
                       price: i.price 
                     })),
                     total: shopTotal,
-                    shop: shopId,
+                    shop: resolvedShopId,
                     paymentMethod: 'paypal',
                     shippingAddress: shippingData.address,
                     phone: shippingData.phone,
@@ -129,22 +130,23 @@ export default function Checkout() {
       await new Promise(resolve => setTimeout(resolve, 3000));
 
       // 2. Regrouper les articles par boutique pour créer les commandes
-      const shops = [...new Set(cart.map(item => item.shop?._id || item.shop))];
+      const shops = [...new Set(cart.map(item => item.shop?.id || item.shop?._id || item.shop))];
       
       for (const shopId of shops) {
-        const shopItems = cart.filter(item => (item.shop?._id || item.shop) === shopId);
+        const resolvedShopId = shopId?.id || shopId;
+        const shopItems = cart.filter(item => (item.shop?.id || item.shop?._id || item.shop) === resolvedShopId);
         const shopTotal = shopItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
         
         await orderService.create({
           items: shopItems.map(i => ({ 
-            product: i._id,
+            product: i.id || i._id,
             productName: i.name, 
             productImage: i.image,
             quantity: i.quantity, 
             price: i.price 
           })),
           total: shopTotal,
-          shop: shopId,
+          shop: resolvedShopId,
           paymentMethod: method,
           shippingAddress: shippingData.address,
           phone: shippingData.phone,
