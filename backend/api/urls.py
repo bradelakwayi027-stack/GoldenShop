@@ -12,7 +12,7 @@ urlpatterns = [
     path('shops', views.shop_list_create, name='shops'),
     path('shops/pending', views.pending_shops_view, name='pending_shops'),
     path('shops/<int:pk>/approve', views.approve_shop_view, name='approve_shop'),
-    path('shops/<int:pk>', views.delete_shop_view, name='delete_shop'),
+    path('shops/<int:pk>', views.shop_detail_view, name='shop_detail'),
 
     # Products
     path('products', views.product_list_create, name='products'),
@@ -35,6 +35,10 @@ urlpatterns = [
 
     # Payment (Flexpay)
     path('payment/flexpay/initiate', views.flexpay_initiate_view, name='flexpay_initiate'),
+    
+    # Payment (PayPal)
+    path('payment/paypal/create', views.paypal_create_order, name='paypal_create'),
+    path('payment/paypal/capture', views.paypal_capture_order, name='paypal_capture'),
 
     # Users
     path('users', views.user_list_view, name='users'),

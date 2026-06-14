@@ -206,6 +206,38 @@ export default function VendorDashboard() {
                       <p style={{ marginTop: '10px' }}>
                         Status: {shop.is_approved ? <span style={{ color: '#10b981' }}>✅ Approuvée</span> : <span style={{ color: '#f59e0b' }}>⏳ En attente d'approbation</span>}
                       </p>
+
+                      <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--glass-border)' }}>
+                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                          🔑 Compte PayPal pour percevoir l'argent (95% des ventes)
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <input 
+                            type="email" 
+                            placeholder="Ex: vendeur@paypal.com"
+                            defaultValue={shop.paypal_email || ''}
+                            id={`paypal-email-${shop.id}`}
+                            style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white' }}
+                          />
+                          <button 
+                            type="button"
+                            onClick={async () => {
+                              const emailVal = document.getElementById(`paypal-email-${shop.id}`).value;
+                              try {
+                                await shopService.update(shop.id, { paypal_email: emailVal });
+                                showToast('Compte PayPal lié avec succès !');
+                                loadData();
+                              } catch (err) {
+                                showToast('Erreur lors de la liaison PayPal', 'error');
+                              }
+                            }}
+                            className="btn-primary-solid"
+                            style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                          >
+                            Lier
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -155,17 +155,29 @@ def approve_shop_view(request, pk):
         return Response({'message': 'Boutique introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
 
-@api_view(['DELETE'])
+@api_view(['PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
-def delete_shop_view(request, pk):
+def shop_detail_view(request, pk):
     try:
         shop = Shop.objects.get(pk=pk)
+    except Shop.DoesNotExist:
+        return Response({'message': 'Boutique introuvable'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'PUT':
+        if shop.owner != request.user and request.user.role != 'admin':
+            return Response({'message': 'Accès refusé'}, status=status.HTTP_403_FORBIDDEN)
+        serializer = ShopSerializer(shop, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
         if request.user.role != 'admin' and shop.owner != request.user:
             return Response({'message': 'Accès refusé'}, status=status.HTTP_403_FORBIDDEN)
         shop.delete()
         return Response({'message': 'Boutique supprimée'})
-    except Shop.DoesNotExist:
-        return Response({'message': 'Boutique introuvable'}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 # --- PRODUCT VIEWS ---
@@ -401,3 +413,181 @@ def user_list_view(request):
     users = User.objects.all().order_by('-date_joined')
     serializer = UserSerializer(users, many=True)
     return Response(serializer.data)
+
+
+# --- PAYPAL PAYMENT VIEWS ---
+
+import requests
+import json
+
+def get_paypal_access_token():
+    client_id = os.environ.get('PAYPAL_CLIENT_ID')
+    client_secret = os.environ.get('PAYPAL_CLIENT_SECRET')
+    if not client_id or not client_secret:
+        return None
+        
+    mode = os.environ.get('PAYPAL_MODE', 'sandbox')
+    base_url = 'https://api-m.paypal.com' if mode == 'live' else 'https://api-m.sandbox.paypal.com'
+    
+    url = f"{base_url}/v1/oauth2/token"
+    headers = {
+        'Accept': 'application/json',
+        'Accept-Language': 'en_US',
+    }
+    data = {'grant_type': 'client_credentials'}
+    
+    try:
+        response = requests.post(url, headers=headers, data=data, auth=(client_id, client_secret), timeout=10)
+        if response.status_code == 200:
+            return response.json().get('access_token')
+    except Exception as e:
+        print(f"[PAYPAL] Error getting access token: {e}")
+    return None
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def paypal_create_order(request):
+    data = request.data
+    amount = float(data.get('amount', 0))
+    shop_id = data.get('shop_id')
+    
+    try:
+        shop = Shop.objects.get(pk=shop_id)
+    except Shop.DoesNotExist:
+        return Response({'message': 'Boutique introuvable'}, status=status.HTTP_404_NOT_FOUND)
+        
+    commission_admin = round(amount * 0.05, 2)
+    part_vendeur = round(amount * 0.95, 2)
+    
+    access_token = get_paypal_access_token()
+    if access_token:
+        mode = os.environ.get('PAYPAL_MODE', 'sandbox')
+        base_url = 'https://api-m.paypal.com' if mode == 'live' else 'https://api-m.sandbox.paypal.com'
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {access_token}',
+        }
+        
+        vendor_paypal_email = shop.paypal_email or os.environ.get('PAYPAL_CLIENT_EMAIL')
+        admin_paypal_email = os.environ.get('PAYPAL_CLIENT_EMAIL', 'admin@my-ecommerce.com')
+        
+        payload = {
+            "intent": "CAPTURE",
+            "purchase_units": [
+                {
+                    "amount": {
+                        "currency_code": "USD",
+                        "value": f"{amount:.2f}",
+                        "breakdown": {
+                            "item_total": {
+                                "currency_code": "USD",
+                                "value": f"{amount:.2f}"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+        
+        if shop.paypal_email:
+            payload["purchase_units"][0]["payee"] = {
+                "email_address": shop.paypal_email
+            }
+            payload["purchase_units"][0]["payment_instruction"] = {
+                "disbursement_mode": "INSTANT",
+                "platform_fees": [
+                    {
+                        "amount": {
+                            "currency_code": "USD",
+                            "value": f"{commission_admin:.2f}"
+                        },
+                        "payee": {
+                            "email_address": admin_paypal_email
+                        }
+                    }
+                ]
+            }
+        
+        try:
+            res = requests.post(f"{base_url}/v2/checkout/orders", headers=headers, data=json.dumps(payload), timeout=10)
+            if res.status_code in [200, 201]:
+                return Response(res.json(), status=status.HTTP_200_OK)
+            else:
+                print(f"[PAYPAL] Partner checkout failed ({res.status_code}): {res.text}. Falling back to standard checkout.")
+                fallback_payload = {
+                    "intent": "CAPTURE",
+                    "purchase_units": [
+                        {
+                            "amount": {
+                                "currency_code": "USD",
+                                "value": f"{amount:.2f}"
+                            },
+                            "description": f"Achat Boutique {shop.name}"
+                        }
+                    ]
+                }
+                res_fallback = requests.post(f"{base_url}/v2/checkout/orders", headers=headers, data=json.dumps(fallback_payload), timeout=10)
+                if res_fallback.status_code in [200, 201]:
+                    return Response(res_fallback.json(), status=status.HTTP_200_OK)
+                return Response(res_fallback.json(), status=res_fallback.status_code)
+        except Exception as e:
+            return Response({'message': f'Erreur de communication avec PayPal: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+    else:
+        # Simulation Mode
+        import time
+        simulated_order_id = f"PAYPAL-SIM-{int(time.time())}"
+        print(f"[PAYPAL SIMULATION] Création de commande: Total={amount}$, Vendeur ({shop.name})={part_vendeur}$, Commission (5%)={commission_admin}$")
+        return Response({
+            'id': simulated_order_id,
+            'status': 'CREATED',
+            'simulated': True,
+            'links': [
+                {
+                    'href': '#simulated-approve',
+                    'rel': 'approve',
+                    'method': 'GET'
+                }
+            ]
+        }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def paypal_capture_order(request):
+    data = request.data
+    paypal_order_id = data.get('order_id')
+    is_simulated = data.get('simulated', False)
+    
+    if not paypal_order_id:
+        return Response({'message': 'Order ID requis'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    if is_simulated or paypal_order_id.startswith('PAYPAL-SIM'):
+        return Response({
+            'status': 'COMPLETED',
+            'simulated': True,
+            'message': 'Paiement simulé avec succès'
+        }, status=status.HTTP_200_OK)
+        
+    access_token = get_paypal_access_token()
+    if not access_token:
+        return Response({'message': 'Identifiants PayPal non disponibles pour la capture'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    mode = os.environ.get('PAYPAL_MODE', 'sandbox')
+    base_url = 'https://api-m.paypal.com' if mode == 'live' else 'https://api-m.sandbox.paypal.com'
+    
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {access_token}',
+    }
+    
+    try:
+        res = requests.post(f"{base_url}/v2/checkout/orders/{paypal_order_id}/capture", headers=headers, timeout=10)
+        if res.status_code in [200, 201]:
+            return Response(res.json(), status=status.HTTP_200_OK)
+        return Response(res.json(), status=res.status_code)
+    except Exception as e:
+        return Response({'message': f'Erreur lors de la capture de l\'ordre PayPal: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

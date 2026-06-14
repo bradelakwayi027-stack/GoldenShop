@@ -64,6 +64,7 @@ export const shopService = {
   getAll: () => api.get('/api/shops'),
   getPending: () => api.get('/api/shops/pending'),
   approve: (id) => api.put(`/api/shops/${id}/approve`),
+  update: (id, payload) => api.put(`/api/shops/${id}`, payload),
   delete: (id) => api.delete(`/api/shops/${id}`),
 };
 
@@ -99,9 +100,11 @@ export const messageService = {
   markAsRead: (id) => api.put(`/api/messages/${id}/read`),
 };
 
-// Payment (Flexpay)
+// Payment (Flexpay & PayPal)
 export const paymentService = {
   initiateFlexpay: (payload) => api.post('/api/payment/flexpay/initiate', payload),
+  createPaypalOrder: (payload) => api.post('/api/payment/paypal/create', payload),
+  capturePaypalOrder: (payload) => api.post('/api/payment/paypal/capture', payload),
 };
 
 export default api;

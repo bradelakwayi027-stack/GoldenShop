@@ -87,7 +87,7 @@ export default function Home() {
           <h2 style={{ fontSize: '3rem', color: 'white', marginBottom: '16px' }}>Prêt à commencer ?</h2>
           <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', marginBottom: '40px' }}>Rejoignez des milliers d'utilisateurs satisfaits dès aujourd'hui.</p>
           <Link to="/register" className="glass" style={{ padding: '16px 40px', borderRadius: '12px', fontWeight: '700', background: 'white', color: 'black' }}>
-            S'inscrire Maintenant
+            Maintenant
           </Link>
         </div>
       </section>

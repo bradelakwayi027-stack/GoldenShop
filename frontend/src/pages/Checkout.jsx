@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
-import { orderService, getImageUrl } from '../services/api';
+import { orderService, paymentService, getImageUrl } from '../services/api';
 
 export default function Checkout() {
   const { cart, total, clearCart, removeFromCart } = useCart();
@@ -9,7 +9,103 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1); // 1: Cart, 2: Payment, 3: Success
   const [shippingData, setShippingData] = useState({ address: '', phone: '' });
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
   const navigate = useNavigate();
+
+  const isShippingValid = shippingData.address.trim() !== '' && shippingData.phone.trim() !== '';
+
+  useEffect(() => {
+    if (method === 'paypal' && !window.paypal && !document.getElementById('paypal-sdk')) {
+      const script = document.createElement('script');
+      const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || 'sb';
+      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
+      script.id = 'paypal-sdk';
+      script.async = true;
+      script.onload = () => {
+        setPaypalLoaded(true);
+      };
+      document.body.appendChild(script);
+    } else if (method === 'paypal' && window.paypal) {
+      setPaypalLoaded(true);
+    }
+  }, [method]);
+
+  useEffect(() => {
+    if (method === 'paypal' && paypalLoaded && window.paypal && isShippingValid) {
+      const container = document.getElementById('paypal-button-container');
+      if (container) {
+        container.innerHTML = '';
+        window.paypal.Buttons({
+          createOrder: async (data, actions) => {
+            const shops = [...new Set(cart.map(item => item.shop?._id || item.shop))];
+            try {
+              const shopId = shops[0];
+              const shopItems = cart.filter(item => (item.shop?._id || item.shop) === shopId);
+              const shopTotal = shopItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+              const res = await paymentService.createPaypalOrder({
+                amount: shopTotal,
+                shop_id: shopId
+              });
+              
+              return res.data.id;
+            } catch (err) {
+              console.error(err);
+              alert("Erreur lors de la création de la commande PayPal.");
+              throw err;
+            }
+          },
+          onApprove: async (data, actions) => {
+            setLoading(true);
+            try {
+              const res = await paymentService.capturePaypalOrder({
+                order_id: data.orderID,
+                simulated: data.orderID.startsWith('PAYPAL-SIM')
+              });
+              
+              if (res.data.status === 'COMPLETED' || res.data.simulated) {
+                const shops = [...new Set(cart.map(item => item.shop?._id || item.shop))];
+                for (const shopId of shops) {
+                  const shopItems = cart.filter(item => (item.shop?._id || item.shop) === shopId);
+                  const shopTotal = shopItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                  
+                  await orderService.create({
+                    items: shopItems.map(i => ({ 
+                      product: i._id,
+                      productName: i.name, 
+                      productImage: i.image,
+                      quantity: i.quantity, 
+                      price: i.price 
+                    })),
+                    total: shopTotal,
+                    shop: shopId,
+                    paymentMethod: 'paypal',
+                    shippingAddress: shippingData.address,
+                    phone: shippingData.phone,
+                    status: 'paid'
+                  });
+                }
+                
+                clearCart();
+                setStep(3);
+              } else {
+                alert("Paiement PayPal non complété.");
+              }
+            } catch (err) {
+              console.error(err);
+              alert("Erreur lors de la capture de la transaction PayPal.");
+            } finally {
+              setLoading(false);
+            }
+          },
+          onError: (err) => {
+            console.error(err);
+            alert("Erreur lors du traitement PayPal.");
+          }
+        }).render('#paypal-button-container');
+      }
+    }
+  }, [method, paypalLoaded, isShippingValid, cart]);
 
   const handlePayment = async (e) => {
     e.preventDefault();
@@ -159,12 +255,13 @@ export default function Checkout() {
 
             <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
               <h4 style={{ marginBottom: '15px', color: 'white' }}>💳 Moyen de Paiement</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
                 {[
                   { id: 'mpesa', label: 'M-Pesa', img: '📱' },
                   { id: 'airtel', label: 'Airtel Money', img: '📱' },
                   { id: 'orange', label: 'Orange Money', img: '📱' },
                   { id: 'visa', label: 'Carte Visa / Master', img: '💳' },
+                  { id: 'paypal', label: 'PayPal (Split 95/5)', img: '💳' },
                 ].map(p => (
                   <div 
                     key={p.id}
@@ -185,10 +282,25 @@ export default function Checkout() {
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary-solid" style={{ height: '50px', fontSize: '1.1rem' }}>
-              {loading ? 'Traitement en cours...' : `Confirmer et Payer ${total.toFixed(2)} $`}
-            </button>
-            <button type="button" onClick={() => setStep(1)} style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none' }}>
+            {method !== 'paypal' ? (
+              <button type="submit" disabled={loading} className="btn-primary-solid" style={{ height: '50px', fontSize: '1.1rem' }}>
+                {loading ? 'Traitement en cours...' : `Confirmer et Payer ${total.toFixed(2)} $`}
+              </button>
+            ) : (
+              <div style={{ marginTop: '20px' }}>
+                {!isShippingValid ? (
+                  <div style={{ padding: '16px', background: 'rgba(212, 175, 55, 0.1)', border: '1px solid var(--primary)', borderRadius: '8px', color: 'white', textAlign: 'center' }}>
+                    Veuillez remplir l'adresse et le téléphone de livraison pour afficher le paiement PayPal.
+                  </div>
+                ) : (
+                  <div>
+                    <div id="paypal-button-container" style={{ minHeight: '150px' }}></div>
+                    {loading && <p style={{ textAlign: 'center', color: 'var(--primary)' }}>Finalisation du paiement PayPal...</p>}
+                  </div>
+                )}
+              </div>
+            )}
+            <button type="button" onClick={() => setStep(1)} style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none', marginTop: '10px' }}>
               Retour au panier
             </button>
           </form>
