@@ -262,7 +262,6 @@ export default function Checkout() {
                   { id: 'mpesa', label: 'M-Pesa', img: '📱' },
                   { id: 'airtel', label: 'Airtel Money', img: '📱' },
                   { id: 'orange', label: 'Orange Money', img: '📱' },
-                  { id: 'visa', label: 'Carte Visa / Master', img: '💳' },
                   { id: 'paypal', label: 'PayPal (Split 95/5)', img: '💳' },
                 ].map(p => (
                   <div 
